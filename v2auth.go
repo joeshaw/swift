@@ -76,3 +76,23 @@ func NewV2AuthRequest(UserName, ApiKey, Password string) (io.Reader, error) {
 	}
 	return bytes.NewBuffer(body), nil
 }
+
+// Finds the Endpoint Url of "type" from the V2Auth using the Region
+// if set in Connection or defaulting to the first one if not
+//
+// Returns "" if not found
+func (c *Connection) V2AuthEndpointUrl(Type string) string {
+	if c.V2 {
+		for _, catalog := range c.V2Auth.Access.ServiceCatalog {
+			if catalog.Type == Type {
+				for _, endpoint := range catalog.Endpoints {
+					if c.Region == "" || (c.Region == endpoint.Region) {
+						// FIXME could use PrivateUrl?
+						return endpoint.PublicUrl
+					}
+				}
+			}
+		}
+	}
+	return ""
+}

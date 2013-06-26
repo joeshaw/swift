@@ -250,20 +250,8 @@ func (c *Connection) Authenticate() (err error) {
 		if err != nil {
 			return err
 		}
-	OUTER:
-		for _, catalog := range c.V2Auth.Access.ServiceCatalog {
-			if catalog.Type == "object-store" {
-				for _, endpoint := range catalog.Endpoints {
-					if c.Region == "" || (c.Region == endpoint.Region) {
-						// FIXME could use PrivateUrl?
-						c.storageUrl = endpoint.PublicUrl
-						break OUTER
-					}
-				}
-			}
-		}
+		c.storageUrl = c.V2AuthEndpointUrl("object-store")
 		c.authToken = c.V2Auth.Access.Token.Id
-
 	} else {
 		c.storageUrl = resp.Header.Get("X-Storage-Url")
 		c.authToken = resp.Header.Get("X-Auth-Token")
