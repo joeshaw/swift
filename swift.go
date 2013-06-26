@@ -210,7 +210,11 @@ func (c *Connection) Authenticate() (err error) {
 	c.V2 = strings.Contains(c.AuthUrl, "v2")
 	if c.V2 {
 		// v2 Authentication
-		body := NewV2AuthRequest(c.UserName, c.ApiKey, c.ApiKey)
+		var body io.Reader
+		body, err = NewV2AuthRequest(c.UserName, c.ApiKey, c.ApiKey)
+		if err != nil {
+			return
+		}
 		req, err = http.NewRequest("POST", c.AuthUrl, body)
 		if err != nil {
 			return
