@@ -157,23 +157,27 @@ func readHeaders(resp *http.Response) Headers {
 type Headers map[string]string
 
 // Does an http request using the running timer passed in
-func (c *Connection) doTimeoutRequest(timer *time.Timer, req *http.Request) (resp *http.Response, err error) {
+func (c *Connection) doTimeoutRequest(timer *time.Timer, req *http.Request) (*http.Response, error) {
 	// Do the request in the background so we can check the timeout
-	done := make(chan bool, 1)
+	type result struct {
+		resp *http.Response
+		err  error
+	}
+	done := make(chan result, 1)
 	go func() {
-		resp, err = c.client.Do(req)
-		done <- true
+		resp, err := c.client.Do(req)
+		done <- result{resp, err}
 	}()
 	// Wait for the read or the timeout
 	select {
-	case <-done:
-		return
+	case r := <-done:
+		return r.resp, r.err
 	case <-timer.C:
 		// Kill the connection on timeout so we don't leak sockets or goroutines
 		cancelRequest(c.tr, req)
 		return nil, TimeoutError
 	}
-	return // For Go 1.0
+	panic("unreachable") // For Go 1.0
 }
 
 // Authenticate connects to the Swift server.
@@ -332,7 +336,12 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 		if p.Parameters != nil {
 			url.RawQuery = p.Parameters.Encode()
 		}
-		req, err = http.NewRequest(p.Operation, url.String(), p.Body)
+		timer := time.NewTimer(c.ConnectTimeout)
+		reader := p.Body
+		if reader != nil {
+			reader = newWatchdogReader(reader, c.Timeout, timer)
+		}
+		req, err = http.NewRequest(p.Operation, url.String(), reader)
 		if err != nil {
 			return
 		}
@@ -343,11 +352,6 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 		}
 		req.Header.Add("User-Agent", DefaultUserAgent)
 		req.Header.Add("X-Auth-Token", c.authToken)
-		timer := time.NewTimer(c.ConnectTimeout)
-		reader := p.Body
-		if reader != nil {
-			reader = newWatchdogReader(reader, c.Timeout, timer)
-		}
 		resp, err = c.doTimeoutRequest(timer, req)
 		if err != nil {
 			return
