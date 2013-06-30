@@ -53,3 +53,8 @@ type Error interface {
     Timeout() bool   // Is the error a timeout?
     Temporary() bool // Is the error temporary?
 }
+
+Abstract the Auth?
+https://github.com/ncw/swift/commit/4af15dfc0c5e4b0aff33b23987b20eea450a0720#commitcomment-3532102
+
+
