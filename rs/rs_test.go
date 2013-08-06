@@ -2,7 +2,7 @@
 package rs_test
 
 import (
-	"github.com/ncw/swift/rs"
+	"github.com/joeshaw/swift/rs"
 	"os"
 	"testing"
 )

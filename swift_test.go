@@ -14,7 +14,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
-	"github.com/ncw/swift"
+	"github.com/joeshaw/swift"
 	"io"
 	"os"
 	"testing"

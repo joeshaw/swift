@@ -2,7 +2,7 @@ package rs
 
 import (
 	"errors"
-	"github.com/ncw/swift"
+	"github.com/joeshaw/swift"
 	"net/http"
 	"strconv"
 	"strings"
